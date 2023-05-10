@@ -52,15 +52,4 @@ router.get('/:id', async (req, res) => {
 });
 
 
-router.post('/activity', async (req, res) => {
-  try {
-
-    const user = await userService.activity(req.body,'daily.data.activity.updated');
-    return res.status(201).json({ message: 'activity creada exitosamente', user });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Hubo un error al procesar la solicitud' });
-  }
-});
-
 module.exports = router;
