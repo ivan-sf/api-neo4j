@@ -44,7 +44,6 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const findUser = await userService.findByVitalKeyUser(id);
-    console.log("findUser",findUser)
     return res.json({ message: 'Ok', user: findUser})
   } catch (error) {
     console.error(error);
@@ -55,6 +54,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/activity', async (req, res) => {
   try {
+
     const user = await userService.activity(req.body,'daily.data.activity.updated');
     return res.status(201).json({ message: 'activity creada exitosamente', user });
   } catch (error) {

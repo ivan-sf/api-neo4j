@@ -1,10 +1,10 @@
 class User {
-    constructor(name, lastName, documentId, vitalKey, createdAt) {
+    constructor(name, last_name, document_id, vital_key, created_at) {
       this.name = name;
-      this.lastName = lastName;
-      this.documentId = documentId;
-      this.vitalKey = vitalKey;
-      this.createdAt = createdAt;
+      this.last_name = last_name;
+      this.document_id = document_id;
+      this.vital_key = vital_key;
+      this.created_at = created_at;
     }
   }
   

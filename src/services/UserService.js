@@ -7,8 +7,8 @@ class UserService {
   }
 
   async createUser(userData) {
-    const { name, lastName, documentId, vitalKey, createdAt } = userData;
-    const newUser = new User(name, lastName, documentId, vitalKey, createdAt);
+    const { name, last_name, document_id, vital_key, created_at } = userData;
+    const newUser = new User(name, last_name, document_id, vital_key, created_at);
     const createdUser = await this.userRepository.create(newUser);
     return createdUser;
   }

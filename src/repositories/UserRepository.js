@@ -5,15 +5,15 @@ class UserRepository {
   async create(user) {
     const session = neo4jDriver.session();
     try {
-      const result = await session.run('CREATE (u:UserCollect {name: $name, lastName: $lastName, documentId: $documentId, vitalKey: $vitalKey, createdAt: $createdAt}) RETURN u', {
+      const result = await session.run('CREATE (u:UserCollect {name: $name, last_name: $last_name, document_id: $document_id, vital_key: $vital_key, created_at: $created_at}) RETURN u', {
         name: user.name,
-        lastName: user.lastName,
-        documentId: user.documentId,
-        vitalKey: user.vitalKey,
-        createdAt: user.createdAt,
+        last_name: user.last_name,
+        document_id: user.document_id,
+        vital_key: user.vital_key,
+        created_at: user.created_at,
       });
       const createdUser = result.records[0].get('u').properties;
-      return new User(createdUser.name, createdUser.lastName, createdUser.documentId, createdUser.vitalKey, createdUser.createdAt);
+      return new User(createdUser.created_at, createdUser.created_at, createdUser.created_at, createdUser.created_at, createdUser.created_at);
     } catch (error) {
       console.error(error);
       throw error;
@@ -26,18 +26,18 @@ class UserRepository {
     const session = neo4jDriver.session();
     try {
       const result = await session.run(`
-        MATCH (u:UserCollect {vitalKey: $id})
+        MATCH (u:UserCollect {vital_key: $id})
         SET u += {
           name: $name,
-          lastName: $lastName,
-          vitalKey: $vitalKey
+          last_name: $last_name,
+          vital_key: $vital_key
         }
         RETURN u
       `, {
         id,
         name: updatedUser.name,
-        lastName: updatedUser.lastName,
-        vitalKey: updatedUser.vitalKey
+        last_name: updatedUser.last_name,
+        vital_key: updatedUser.vital_key
       });
       let updatedNode = false;
       result.records.length > 0 
@@ -47,7 +47,7 @@ class UserRepository {
       if (!updatedNode) {
         throw new Error(`No se encontró ningún usuario con vital key ${id}`);
       }
-      return new User(updatedNode.name, updatedNode.lastName, updatedNode.documentId, updatedNode.vitalKey, updatedNode.createdAt);
+      return new User(updatedNode.name, updatedNode.last_name, updatedNode.document_id, updatedNode.vital_key, updatedNode.created_at);
     } catch (error) {
       console.error(error);
       throw error;
@@ -61,7 +61,7 @@ class UserRepository {
     const session = neo4jDriver.session();
     try {
       const result = await session.run(`
-        MATCH (u:UserCollect {vitalKey: $id})
+        MATCH (u:UserCollect {vital_key: $id})
         DELETE u
         RETURN COUNT(u) as deletedCount
       `, {
@@ -80,17 +80,17 @@ class UserRepository {
     }
   }
 
-  async findByVitalKey(vitalKey) {
+  async findByVitalKey(vital_key) {
     const session = neo4jDriver.session();
     try {
-      const result = await session.run(`MATCH(u: UserCollect { vitalKey: $vitalKey }) RETURN u`, {
-        vitalKey
+      const result = await session.run(`MATCH(u: UserCollect { vital_key: $vital_key }) RETURN u`, {
+        vital_key
       });
       const foundNode = result.records[0]?.get('u')?.properties;
       if (!foundNode) {
         return null;
       }
-      return new User(foundNode.name, foundNode.lastName, foundNode.documentId, foundNode.vitalKey, foundNode.createdAt);
+      return new User(foundNode.name, foundNode.last_name, foundNode.document_id, foundNode.vital_key, foundNode.created_at);
     } catch (error) {
       console.error(error);
       throw error;
@@ -99,26 +99,26 @@ class UserRepository {
     }
   }
 
-async createDataDayActivity(data, eventType) {
+async createDataDayActivity(data, event_type) {
   const { data: { calendar_date, user_key }} = data;
   const dataString = JSON.stringify(data);
   const session = neo4jDriver.session();
   try {
     const result = await session.run(`
-    MATCH (u:UserCollect { vitalKey: $user_key })
-    MERGE (d:DataDay { calendar_date: $calendar_date, vitalKeyDataDay: $user_key })
-    MERGE (a:Activity { eventType: $eventType, calendar_date_activity: $calendar_date, vitalKeyActivity: $user_key })
-    ON CREATE SET a.createdAt = datetime()
-    CREATE (ua:UpdateActivity { data: $dataString, createdAt: datetime(), vitalKeyUpdateActivity: $user_key })
+    MATCH (u:UserCollect { vital_key: $user_key })
+    MERGE (d:DataDay { calendar_date: $calendar_date, vital_key_data_day: $user_key })
+    MERGE (a:Activity { event_type: $event_type, calendar_date_activity: $calendar_date, vital_key_activity: $user_key })
+    ON CREATE SET a.created_at = datetime()
+    CREATE (ua:UpdateActivity { data: $dataString, created_at: datetime(), vital_key_update_activity: $user_key })
     MERGE (u)-[:Day]->(d)
     MERGE (d)-[:DataActivity]->(a)
-    ON CREATE SET a.createdAt = datetime()
+    ON CREATE SET a.created_at = datetime()
     MERGE (a)-[:UpdateData]->(ua)
     RETURN d, a, ua
     `, {
       user_key,
       calendar_date,
-      eventType,
+      event_type,
       dataString // Aquí es donde se agrega el parámetro faltante
     });
     const createdDataDay = result.records[0].get('d').properties;
@@ -138,71 +138,6 @@ async createDataDayActivity(data, eventType) {
 }
 
 
-/////////////////////////////////
-// OK CREA VARIOS NODOS DE ACTIVIDAD
-/////////////////////////////////
-// MATCH (u:UserCollect { vitalKey: $user_key })
-//     MERGE (d:DataDay { calendar_date: $calendar_date })
-//     CREATE (a:Activity { eventType: $eventType })
-//     CREATE (ua:UpdateActivity { data: $dataString, createdAt: datetime(), vitalKeyUpdateActivity: $user_key })
-//     MERGE (u)-[:Day]->(d)
-//     MERGE (d)-[:DataActivity]->(a)
-//     CREATE (a)-[:UpdateData]->(ua)
-//     RETURN d, a, ua
-  
-/////////////////////////////////
-// OK CREA UN UNICO NODO DE ACTIVIDAD
-/////////////////////////////////
-// MATCH (u:UserCollect { vitalKey: $user_key })
-// MERGE (d:DataDay { calendar_date: $calendar_date })
-// MERGE (a:Activity { eventType: $eventType })
-// CREATE (ua:UpdateActivity { data: $dataString, createdAt: datetime(), vitalKeyUpdateActivity: $user_key })
-// MERGE (u)-[:Day]->(d)
-// MERGE (d)-[:DataActivity]->(a)
-// CREATE (a)-[:UpdateData]->(ua)
-// RETURN d, a, ua
-
-/////////////////////////////////
-// OK FUNCIONAL SIN VITAL KEY EN DataDay
-/////////////////////////////////
-// MATCH (u:UserCollect { vitalKey: $user_key })
-//     MERGE (d:DataDay { calendar_date: $calendar_date })
-//     MERGE (a:Activity { eventType: $eventType, calendar_date: $calendar_date })
-//     CREATE (ua:UpdateActivity { data: $dataString, createdAt: datetime(), vitalKeyUpdateActivity: $user_key })
-//     MERGE (u)-[:Day]->(d)
-//     MERGE (d)-[:DataActivity]->(a)
-//     CREATE (a)-[:UpdateData]->(ua)
-//     RETURN d, a, ua
-
-
-/////////////////////////////////
-// OK FUNCIONAL SIN VITAL KEY EN Activity
-/////////////////////////////////
-// MATCH (u:UserCollect { vitalKey: $user_key })
-//     MERGE (d:DataDay { calendar_date: $calendar_date, vitalKeyDataDay: $user_key })
-//     MERGE (a:Activity { eventType: $eventType, calendar_date_activity: $calendar_date })
-//     ON CREATE SET a.createdAt = datetime()
-//     CREATE (ua:UpdateActivity { data: $dataString, createdAt: datetime(), vitalKeyUpdateActivity: $user_key })
-//     MERGE (u)-[:Day]->(d)
-//     MERGE (d)-[:DataActivity]->(a)
-//     ON CREATE SET a.createdAt = datetime()
-//     MERGE (a)-[:UpdateData]->(ua)
-//     RETURN d, a, ua
-
-
-/////////////////////////////////
-// OK FUNCIONAL TODO INDEPENDIENTE
-/////////////////////////////////
-// MATCH (u:UserCollect { vitalKey: $user_key })
-// MERGE (d:DataDay { calendar_date: $calendar_date, vitalKeyDataDay: $user_key })
-// MERGE (a:Activity { eventType: $eventType, calendar_date_activity: $calendar_date, vitalKeyActivity: $user_key })
-// ON CREATE SET a.createdAt = datetime()
-// CREATE (ua:UpdateActivity { data: $dataString, createdAt: datetime(), vitalKeyUpdateActivity: $user_key })
-// MERGE (u)-[:Day]->(d)
-// MERGE (d)-[:DataActivity]->(a)
-// ON CREATE SET a.createdAt = datetime()
-// MERGE (a)-[:UpdateData]->(ua)
-// RETURN d, a, ua
 }
 
 module.exports = UserRepository;
