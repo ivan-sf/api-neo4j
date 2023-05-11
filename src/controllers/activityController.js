@@ -6,7 +6,7 @@ const vitalActivityService = new VitalActivityService();
 
 router.post('/activity', async (req, res) => {
   try {
-    const activity = await vitalActivityService.activity(req.body,req.body.event_type);
+    const activity = await vitalActivityService.activity(req.body,req.body.event_type,'Activity');
     return res.status(201).json({ message: 'activity creada exitosamente', activity });
   } catch (error) {
     console.error(error);

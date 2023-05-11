@@ -1,29 +1,31 @@
 const neo4jDriver = require('../config/database');
 
 class ActivityRepository {
-    async createDataDayActivity(data, event_type) {
+    async createDataDayActivity(data, event_type, nameNodeTypeEvent) {
         let relType = ''
-        let nameNode = ''
-        if(event_type === "daily.data.activity.updated"){
+        let nameNodeEvent = ''
+        if (event_type.includes("updated")) {
             relType = 'EVENT_UPDATED_DATA'
-            nameNode = 'UpdatedActivity'
-        }else if(event_type === "daily.data.activity.created"){
+            nameNodeEvent = 'Updated'
+        }else if (event_type.includes("created")) {
             relType = 'EVENT_CREATED_DATA'
-            nameNode = 'CreatedActivity'
+            nameNodeEvent = 'Created'
+        }else if (event_type.includes("historical")) {
+            relType = 'EVENT_HISTORICAL_DATA'
+            nameNodeEvent = 'Historical'
         }
         const { data: { calendar_date, user_id, source } } = data;
-        console.log("source",source)
         const dataString = JSON.stringify(data);
         const session = neo4jDriver.session();
         try {
             const result = await session.run(`
                 MATCH (u:UserCollect { vital_key: $user_id })
-                MERGE (d:DataDay { calendar_date: $calendar_date, vital_key: $user_id })
+                MERGE (d:Day { calendar_date: $calendar_date, vital_key: $user_id })
                 MERGE (s:Source { name: $source.name, logo: $source.logo, slug: $source.slug, vital_key: $user_id, calendar_date: $calendar_date })
-                MERGE (a:Activity { event_type: $event_type, calendar_date_activity: $calendar_date, vital_key: $user_id })
-                CREATE (ua:`+nameNode+` { data: $dataString, created_at: datetime(), vital_key: $user_id })
-                MERGE (u)-[:DAY]->(d)
-                MERGE (d)-[:WEARABLE]->(s)
+                MERGE (a:`+nameNodeTypeEvent+` { event_type: $event_type, calendar_date_activity: $calendar_date, vital_key: $user_id })
+                CREATE (ua:`+nameNodeEvent+` { data: $dataString, created_at: datetime(), vital_key: $user_id })
+                MERGE (u)-[:CREATED_DATA]->(d)
+                MERGE (d)-[:FROM_WEARABLE]->(s)
                 MERGE (s)-[:HAS_EVENT]->(a)
                 MERGE (a)-[:`+relType+`]->(ua)
                 MERGE (ua)-[:CREATED_BY { calendar_date: $calendar_date }]->(u)

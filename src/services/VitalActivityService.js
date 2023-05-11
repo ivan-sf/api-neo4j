@@ -5,8 +5,8 @@ class ActivityService {
     this.activityRepository = new ActivityRepository();
   }
 
-  async activity(data, eventType) {
-    const activity = await this.activityRepository.createDataDayActivity(data, eventType);
+  async activity(data, eventType, nameNodeTypeEvent) {
+    const activity = await this.activityRepository.createDataDayActivity(data, eventType, nameNodeTypeEvent);
     return activity;
   }
 
