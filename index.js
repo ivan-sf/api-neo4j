@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const userController = require('./src/controllers/UserController');
 const companyController = require('./src/controllers/CompanyController');
-const activityController = require('./src/controllers/ActivityController');
+const activityController = require('./src/controllers/VitalController');
 
 const app = express();
 const port = 3000;

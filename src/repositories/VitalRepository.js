@@ -1,7 +1,9 @@
 const neo4jDriver = require('../config/database');
 
-class ActivityRepository {
-    async createDataDayActivity(data, event_type, nameNodeTypeEvent) {
+class VitalRepository {
+    async createDataVital(dataCypher, event_type, nameNodeTypeEvent,data) {
+        const { data: { calendar_date, user_id, source } } = dataCypher;
+        const dataString = JSON.stringify(data);
         let relType = ''
         let nameNodeEvent = ''
         if (event_type.includes("updated")) {
@@ -14,15 +16,13 @@ class ActivityRepository {
             relType = 'EVENT_HISTORICAL_DATA'
             nameNodeEvent = 'Historical'
         }
-        const { data: { calendar_date, user_id, source } } = data;
-        const dataString = JSON.stringify(data);
         const session = neo4jDriver.session();
         try {
             const result = await session.run(`
                 MATCH (u:UserCollect { vital_key: $user_id })
                 MERGE (d:Day { calendar_date: $calendar_date, vital_key: $user_id })
                 MERGE (s:Source { name: $source.name, logo: $source.logo, slug: $source.slug, vital_key: $user_id, calendar_date: $calendar_date })
-                MERGE (a:`+nameNodeTypeEvent+` { event_type: $event_type, calendar_date_activity: $calendar_date, vital_key: $user_id })
+                MERGE (a:`+nameNodeTypeEvent+` { event_type: $event_type, calendar_date: $calendar_date, vital_key: $user_id })
                 CREATE (ua:`+nameNodeEvent+` { data: $dataString, created_at: datetime(), vital_key: $user_id })
                 MERGE (u)-[:CREATED_DATA]->(d)
                 MERGE (d)-[:FROM_WEARABLE]->(s)
@@ -39,12 +39,12 @@ class ActivityRepository {
                 source
             });
             const createdDataDay = result.records[0].get('d').properties;
-            const createdActivity = result.records[0].get('a').properties;
-            const createdUpdateActivity = result.records[0].get('ua').properties;
+            const createdVital = result.records[0].get('a').properties;
+            const createdUpdateVital = result.records[0].get('ua').properties;
             return {
                 createdDataDay,
-                createdActivity,
-                createdUpdateActivity
+                createdVital,
+                createdUpdateVital
             };
         } catch (error) {
             console.error(error);
@@ -55,4 +55,4 @@ class ActivityRepository {
     }
 }
 
-module.exports = ActivityRepository;
+module.exports = VitalRepository;
