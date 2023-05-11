@@ -7,7 +7,7 @@ class UserRepository {
     try {
       const result = await session.run(`
       MATCH (c:Company {company_key: $company_key_user})
-      CREATE (u:UserCollect {name: $name, last_name: $last_name, document_id: $document_id, vital_key: $vital_key, created_at: $created_at})-[:company_key_user]->(c)
+      CREATE (u:UserCollect {name: $name, last_name: $last_name, document_id: $document_id, vital_key: $vital_key, created_at: $created_at})-[:BELONGS_TO]->(c)
       RETURN u
       `, {
         name: user.name,

@@ -5,10 +5,10 @@ class ActivityRepository {
         let relType = ''
         let nameNode = ''
         if(event_type === "daily.data.activity.updated"){
-            relType = 'UpdatedData'
+            relType = 'EVENT_UPDATED_DATA'
             nameNode = 'UpdatedActivity'
         }else if(event_type === "daily.data.activity.created"){
-            relType = 'CreatedData'
+            relType = 'EVENT_CREATED_DATA'
             nameNode = 'CreatedActivity'
         }
         const { data: { calendar_date, user_id, source } } = data;
@@ -22,10 +22,12 @@ class ActivityRepository {
                 MERGE (s:Source { name: $source.name, logo: $source.logo, slug: $source.slug, vital_key: $user_id, calendar_date: $calendar_date })
                 MERGE (a:Activity { event_type: $event_type, calendar_date_activity: $calendar_date, vital_key: $user_id })
                 CREATE (ua:`+nameNode+` { data: $dataString, created_at: datetime(), vital_key: $user_id })
-                MERGE (u)-[:Day]->(d)
-                MERGE (d)-[:Source]->(s)
-                MERGE (s)-[:DataActivity]->(a)
+                MERGE (u)-[:DAY]->(d)
+                MERGE (d)-[:WEARABLE]->(s)
+                MERGE (s)-[:HAS_EVENT]->(a)
                 MERGE (a)-[:`+relType+`]->(ua)
+                MERGE (ua)-[:CREATED_BY { calendar_date: $calendar_date }]->(u)
+                MERGE (ua)-[:CREATED_ON { device: $source.slug }]->(s) 
                 RETURN d, a, ua, s
                 `, {
                 user_id,
